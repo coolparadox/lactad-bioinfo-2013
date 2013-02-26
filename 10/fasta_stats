@@ -1,0 +1,129 @@
+#!/bin/env perl
+
+#
+# Statistics of fasta files.
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+
+use lib 'lib';
+use feature 'say';
+
+use Getopt::Long;
+
+use Bio::Seq;
+use Bio::SeqIO;
+
+use My::Science::Bioinfo ':all';
+
+# Online help definitions.
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: fasta_stats -h
+   or: fasta_stats [OPTIONS...] FILE
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Statistics of fasta files.
+
+  -h, --help          This help screen.
+  -v, --version       Version number of this routine.
+
+FILE is the path to a fasta formated file containing DNA information.
+
+Statistics are sent to STDOUT.
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# (Subroutine) Show usage hint and fail.
+sub fail_with_usage {
+
+	print STDERR $usage_msg;
+	exit 1;
+
+}
+
+#
+# Parse CLI options.
+#
+
+my ($help_wanted, $version_wanted, $how_many_mutations);
+my $options_parsed = GetOptions(
+
+	'help' => \$help_wanted,
+	'version' => \$version_wanted,
+
+);
+if (!$options_parsed) {
+
+	# Failed to parse all CLI options.
+	fail_with_usage;
+
+}
+if ($help_wanted) {
+
+	# User wants online help.
+	print $help_msg;
+	exit 0;
+}
+if ($version_wanted) {
+
+	# User wants routine version number.
+	say $version;
+	exit 0;
+}
+my $fasta_file_path = shift;
+if (!defined $fasta_file_path) {
+
+	# User did not passed path to file.
+	say STDERR "error: missing path to fasta file.";
+	fail_with_usage;
+
+}
+if (@ARGV) {
+
+	# Too many arguments.
+	say STDERR "error: too many arguments.";
+	fail_with_usage;
+
+}
+
+#
+# Process fasta file.
+#
+
+my $seq_file = Bio::SeqIO->new(-file => $fasta_file_path, -format => "Fasta", -alphabet => "dna");
+my $seq_count = 0;
+while (my $seq = $seq_file->next_seq()) {
+
+	$seq_count++;
+	say "Sequence $seq_count: ", $seq->display_id;
+	say "Description: ", $seq->desc;
+	say "First 40 nucleotides: ", substr($seq->seq, 1, 40);
+	my $seq_length = length ($seq->seq);
+	say "Sequence size: $seq_length nucleotides";
+	my %nucleotide_count = nucleotide_count ($seq->seq);
+	my $a = $nucleotide_count{A};
+	my $t = $nucleotide_count{T};
+	my $g = $nucleotide_count{G};
+	my $c = $nucleotide_count{C};
+	printf "Nucleotide counts: A = %u (%0.1f%%), T = %u (%0.1f%%), G = %u (%0.1f%%), C = %u (%0.1f%%)\n                   A+T = %u (%0.1f%%), G+C = %u (%0.1f%%)\n",
+		$a, $a * 100 / $seq_length,
+		$t, $t * 100 / $seq_length,
+		$g, $g * 100 / $seq_length,
+		$c, $c * 100 / $seq_length,
+		$a + $t, ($a + $t) * 100 / $seq_length,
+		$g + $c, ($g + $c) * 100 / $seq_length;
+	say '';
+
+}
+say "** End of sequences, total of $seq_count sequence(s) processed."
+
