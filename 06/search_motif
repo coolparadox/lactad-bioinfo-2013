@@ -1,0 +1,147 @@
+#!/bin/env perl
+
+#
+# Search a motif in a protein sequence.
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+
+use lib 'lib';
+use feature 'say';
+
+use Getopt::Long;
+use My::Science::Bioinfo ':all';
+
+# Online help definitions.
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: search_motif -h
+   or: search_motif [OPTIONS...] MOTIF [SEQUENCE]
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Search for a motif in a protein sequence.
+
+  -h, --help      This help screen.
+  -v, --version   Version number of this routine.
+
+MOTIF is a Perl regular expression to be matched to SEQUENCE.
+SEQUENCE is a protein amino acid sequence. If absent, it's read from STDIN.
+
+SEQUENCE is always sent to STDOUT with matched amino acid codes upper cased (and
+unmatched ones lower cased).
+
+Exit status is 0 if motif is found, 1 if motif is not found, >1 on errors.
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# (Subroutine) Show usage hint and fail.
+sub fail_with_usage {
+
+	print STDERR $usage_msg;
+	exit 2;
+
+}
+
+#
+# Parse CLI options.
+#
+
+my ($help_wanted, $version_wanted);
+my $options_parsed = GetOptions(
+
+	'help' => \$help_wanted,
+	'version' => \$version_wanted,
+
+);
+if (!$options_parsed) {
+
+	# Failed to parse all CLI options.
+	fail_with_usage;
+
+}
+if ($help_wanted) {
+
+	# User wants online help.
+	print $help_msg;
+	exit 0;
+}
+if ($version_wanted) {
+
+	# User wants routine version number.
+	say $version;
+	exit 0;
+}
+my $motif = shift;
+if (!$motif) {
+
+	# MOTIF argument is missing.
+	say STDERR "error: missing motif.";
+	fail_with_usage;
+
+}
+my $protein_sequence = shift;
+if (@ARGV) {
+
+	# Too many arguments.
+	say STDERR "error: too many arguments.";
+	fail_with_usage;
+
+}
+
+#
+# Process protein sequence.
+#
+
+if (!defined $protein_sequence) {
+
+	# User did not pass protein sequence in command line.
+	# Let's get it from STDIN.
+	my @sequences;
+	while (<STDIN>) {
+
+		chomp $_;
+		push @sequences, $_;
+
+	}
+	$protein_sequence = join '', @sequences;
+
+}
+chomp $protein_sequence;
+$protein_sequence = lc $protein_sequence;
+if (!is_protein $protein_sequence) {
+
+	say STDERR "error: invalid protein sequence.";
+	exit 2;
+
+}
+eval { qr/$motif/ };
+if ($@) {
+
+	say STDERR "error: motif is not a valid Perl regular expression: $@";
+	exit 2;
+
+}
+if ($protein_sequence =~ m/(.*)($motif)(.*)/i) {
+
+	say STDERR "motif found! :-)";
+	print $1, uc $2, $3, "\n";
+	exit 0;
+
+}
+else {
+
+	say STDERR "motif not found :-(";
+	say $protein_sequence;
+	exit 1;
+
+}
+
