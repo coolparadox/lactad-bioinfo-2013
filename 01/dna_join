@@ -1,0 +1,89 @@
+#!/bin/env perl
+
+#
+# Join two sequences of DNA.
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+
+#
+# Online help definitions.
+#
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: dna_join -h
+   or: dna_join [OPTIONS...] SEQ1 SEQ2
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Join two sequences of DNA.
+
+  -h, --help      This help screen.
+  -v, --version   Version number of this routine.
+
+SEQ1 and SEQ2 are nucleotide sequences.
+
+Result of join is sent to stdout.
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# (Subroutine) Show usage hint and fail.
+sub fail_with_usage {
+
+	print STDERR $usage_msg;
+	exit 1;
+
+}
+
+#
+# Parse CLI options.
+#
+
+my ($help_wanted, $version_wanted);
+my $options_parsed = GetOptions(
+
+        'help' => \$help_wanted,
+        'version' => \$version_wanted,
+
+);
+if (!$options_parsed) { fail_with_usage; }
+if ($help_wanted) { print $help_msg; exit 0; }
+if ($version_wanted) { say $version ; exit 0; }
+my $seq1 = shift;
+if (!defined $seq1) { print STDERR "error: missing DNA sequence 1.\n"; fail_with_usage; }
+my $seq2 = shift;
+if (!defined $seq2) { print STDERR "error: missing DNA sequence 2.\n"; fail_with_usage; }
+if (@ARGV) { print STDERR "error: too many arguments.\n"; fail_with_usage; }
+
+#
+# Join DNA sequences.
+# Make sure sequences represent DNA correctly.
+#
+
+chomp $seq1;
+if ($seq1 =~ m/[^aAtTgGcC]/) {
+
+	print STDERR "error: sequence 1 does not look like DNA.\n";
+	exit 1;
+
+}
+chomp $seq2;
+if ($seq2 =~ m/[^aAtTgGcC]/) {
+
+	print STDERR "error: sequence 2 does not look like DNA.\n";
+	exit 1;
+
+}
+my $answer = $seq1 . $seq2;
+print "$answer\n";
+
