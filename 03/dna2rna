@@ -1,0 +1,137 @@
+#!/bin/env perl
+
+#
+# Transform a DNA sequence to RNA.
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+use feature 'say';
+
+use Getopt::Long;
+
+# Online help definitions.
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: dna2rna -h
+   or: dna2rna [OPTIONS...] [SEQUENCE]
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Transform a DNA sequence to RNA.
+
+  -h, --help      This help screen.
+  -v, --version   Version number of this routine.
+
+SEQUENCE is a DNA sequence. If absent, sequence is read from STDIN.
+
+Result of transformation is always sent to STDOUT.
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# (Subroutine) Show usage hint and fail.
+sub fail_with_usage {
+
+	print STDERR $usage_msg;
+	exit 1;
+
+}
+
+#
+# Parse CLI options.
+#
+
+my ($help_wanted, $version_wanted);
+my $options_parsed = GetOptions(
+
+	'help' => \$help_wanted,
+	'version' => \$version_wanted,
+
+);
+if (!$options_parsed) {
+
+	# Failed to parse all CLI options.
+	fail_with_usage;
+
+}
+if ($help_wanted) {
+
+	# User wants online help.
+	print $help_msg;
+	exit 0;
+}
+if ($version_wanted) {
+
+	# User wants routine version number.
+	say $version;
+	exit 0;
+}
+my $dna_sequence = shift;
+if (@ARGV) {
+
+	# Too many arguments.
+	say STDERR "error: too many arguments.";
+	fail_with_usage;
+
+}
+
+#
+# Process DNA sequence.
+#
+
+# (Subroutine) Does a string represent DNA?
+sub is_dna {
+
+	my ($sequence) = @_;
+	return !($sequence =~ m/[^aAcCgGtT]/);
+
+}
+
+# (Subroutine) Convert a DNA sequence string to RNA.
+sub dna2rna {
+
+	my ($sequence) = @_;
+	$sequence =~ tr/tT/uU/;
+	return $sequence;
+
+}
+
+if (defined $dna_sequence) {
+
+	# User passed DNA sequence in command line.
+	chomp $dna_sequence;
+	if (!is_dna $dna_sequence) {
+
+		say STDERR "error: invalid DNA sequence.";
+		exit 1;
+
+	}
+	say STDOUT dna2rna $dna_sequence;
+
+}
+else {
+
+	# User did not pass DNA sequence in command line.
+	# Let's get it from STDIN.
+	while (<STDIN>) {
+
+		chomp $_;
+		if (!is_dna $_) {
+
+			say STDERR "error: invalid DNA sequence.";
+			exit 1;
+
+		}
+		print STDOUT dna2rna $_;
+
+	}
+	print "\n";
+
+}
