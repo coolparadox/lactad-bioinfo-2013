@@ -1,0 +1,62 @@
+#!/bin/env perl
+
+#
+# Greet anyone (or the world).
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+use feature 'say';
+
+use Getopt::Long;
+
+# Online help definitions.
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: hello -h
+   or: hello [OPTIONS...] [NAME...]
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Greet the world, or anyone instead.
+
+  -h, --help      This help screen.
+  -v, --version   Version number of this routine.
+
+NAME is someone (or something) to be greeted; defaults to 'world'.
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# Parse CLI options.
+
+my ($help_wanted, $version_wanted);
+my $options_parsed = GetOptions(
+
+	'help' => \$help_wanted,
+	'version' => \$version_wanted,
+
+);
+if (!$options_parsed) { print STDERR $usage_msg; exit 1; }
+if ($help_wanted) { print $help_msg; exit 0; }
+if ($version_wanted) { say $version ; exit 0; }
+
+# Greet the world, or perhaps a soul in need of attention.
+
+if (@ARGV) {
+
+	say "Hello @ARGV!";
+
+}
+else {
+
+	say "Hello world!";
+
+}
+
