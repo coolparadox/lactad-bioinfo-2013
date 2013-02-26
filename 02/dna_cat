@@ -1,0 +1,197 @@
+#!/bin/env perl
+
+#
+# Concatenate sequences of DNA.
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+use autodie;
+use feature ":5.10";
+
+#
+# Online help definitions.
+#
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: dna_cat -h
+   or: dna_cat [OPTIONS...] -e DNA_STRING | -f DNA_FILE ...
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Concatenate fragments of DNA sequences.
+
+  -h, --help      This help screen.
+  -v, --version   Version number of this routine.
+  -e DNA_STRING   DNA fragment given in command line.
+  -f DNA_FILE     Path to file containing DNA fragment.
+
+DNA fragments are processed following the order given by options -e / -f
+(these options may be issued more than once).
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# (Subroutine) Show usage hint and fail.
+sub fail_with_usage {
+
+	print STDERR $usage_msg;
+	exit 1;
+
+}
+
+#
+# Parse CLI options.
+#
+
+my @fragment_opts; # accumulate fragment references given in command line.
+while (@ARGV) {
+
+	given (shift) {
+
+		when (["-h", "--help"]) {
+
+			# User wants online help.
+			print $help_msg;
+			exit 0;
+
+		}
+
+		when (["-v", "--version"]) {
+
+			# User wants version number.
+			say $version;
+			exit 0;
+
+		}
+
+		when ("-e") {
+
+			# DNA fragment given in command line.
+			my $fragment = shift;
+			if (!$fragment or $fragment =~ /^-/) {
+
+				# Missing value for this CLI option.
+				say STDERR "error: missing value of '$_' option.";
+				fail_with_usage;
+
+			}
+			push @fragment_opts, { inline => $fragment };
+
+		}
+
+		when ("-f") {
+
+			# DNA fragment given via file.
+			# We'll check file accessibility later.
+			my $fragment = shift;
+			if (!$fragment or $fragment =~ /^-/) {
+
+				# Missing value for this CLI option.
+				say STDERR "error: missing value of '$_' option.";
+				fail_with_usage;
+
+			}
+			push @fragment_opts, { file => $fragment };
+
+		}
+
+		when (/^-/) {
+
+			# User is talking nonsense.
+			say STDERR "error: unknown option '$_'.";
+			fail_with_usage;
+
+		}
+
+		default {
+
+			# User is talking nonsense.
+			say STDERR "error: unknown argument '$_'.";
+			fail_with_usage;
+
+		}
+	}
+
+}
+if (!@fragment_opts) {
+
+	# No DNA fragments were given by user.
+	say STDERR "error: no DNA fragment was given.";
+	fail_with_usage;
+
+}
+
+#
+# Print DNA sequences in the order given by CLI arguments.
+# Make sure sequences represent DNA correctly.
+#
+
+# (Function) Does a string represent DNA?
+sub is_dna {
+
+	my ($sequence) = @_;
+	return !($sequence =~ /[^aAcCgGtT]/);
+
+}
+
+# Iterate through DNA fragments given by user.
+foreach (@fragment_opts) {
+
+	my $fragment_type = (keys(%$_))[0];
+	my $fragment_value = (values(%$_))[0];
+	given ($fragment_type) {
+
+		when ("inline") {
+
+			# fragment_value is supposed to be a DNA sequence itself.
+			chomp $fragment_value;
+			if (!is_dna $fragment_value) {
+
+				say STDERR "error: '$fragment_value' does not look like a DNA sequence.";
+				exit 1;
+
+			}
+			print $fragment_value;
+
+		}
+
+		when ("file") {
+
+			# fragment_value is supposed to be a path to a file that
+			# contains a DNA sequence. Let's process file contents.
+			open my $dna_file, '<', $fragment_value;
+			while (<$dna_file>) {
+
+				chomp $_;
+				if (!is_dna $_) {
+
+					say STDERR "error: '$_' (from file '$fragment_value') does not look like a DNA sequence.";
+					exit 1;
+
+				}
+				print $_;
+
+			}
+			close $dna_file;
+
+		}
+
+		default {
+
+			# (Safeguard) Execution should never get here >:-(
+			die "panic: unknown fragment type option '$_'";
+
+		}
+
+	}
+
+}
+print "\n";
+
