@@ -1,0 +1,140 @@
+#!/bin/env perl
+
+#
+# Induce mutations in a DNA sequence.
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+
+use lib 'lib';
+use feature 'say';
+
+use Getopt::Long;
+use My::Science::Bioinfo ':all';
+
+# Online help definitions.
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: dna_mutate -h
+   or: dna_mutate [OPTIONS...] [SEQUENCE]
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Induce random mutations in a DNA sequence.
+
+  -h, --help          This help screen.
+  -v, --version       Version number of this routine.
+  -n, --number NUM    Number of mutations to be performed.
+
+SEQUENCE is a DNA sequence. If absent, it's read from STDIN.
+
+NUM defaults to 1.
+
+Mutated sequence is sent to STDOUT.
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# (Subroutine) Show usage hint and fail.
+sub fail_with_usage {
+
+	print STDERR $usage_msg;
+	exit 1;
+
+}
+
+#
+# Parse CLI options.
+#
+
+my ($help_wanted, $version_wanted, $how_many_mutations);
+my $options_parsed = GetOptions(
+
+	'help' => \$help_wanted,
+	'version' => \$version_wanted,
+	'number=o' => \$how_many_mutations,
+
+);
+if (!$options_parsed) {
+
+	# Failed to parse all CLI options.
+	fail_with_usage;
+
+}
+if ($help_wanted) {
+
+	# User wants online help.
+	print $help_msg;
+	exit 0;
+}
+if ($version_wanted) {
+
+	# User wants routine version number.
+	say $version;
+	exit 0;
+}
+if (defined $how_many_mutations) {
+
+	if ($how_many_mutations < 0) {
+
+		# Number of mutations is not a non-negative decimal integer.
+		say STDERR "error: number of mutations must be a non negative integer.";
+		fail_with_usage;
+
+	}
+
+}
+else {
+
+	$how_many_mutations = 1;
+
+}
+my $dna_sequence = shift;
+if (@ARGV) {
+
+	# Too many arguments.
+	say STDERR "error: too many arguments.";
+	fail_with_usage;
+
+}
+
+#
+# Process DNA sequence.
+#
+
+if (!defined $dna_sequence) {
+
+	# User did not pass protein sequence in command line.
+	# Let's get it from STDIN.
+	my @sequences;
+	while (<STDIN>) {
+
+		chomp $_;
+		push @sequences, $_;
+
+	}
+	$dna_sequence = join '', @sequences;
+
+}
+chomp $dna_sequence;
+if (!is_dna $dna_sequence) {
+
+	say STDERR "error: invalid DNA sequence.";
+	exit 1;
+
+}
+if ($how_many_mutations > length $dna_sequence) {
+
+	say STDERR "error: number of mutations is greater than DNA sequence.";
+	exit 1;
+
+}
+say dna_mutate ($how_many_mutations, $dna_sequence);
+
