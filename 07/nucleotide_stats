@@ -1,0 +1,122 @@
+#!/bin/env perl
+
+#
+# Count appearances of nucleotides in a DNA sequence.
+#
+# This routine was developed as a homework exercise for LaCTAD Bioinformatics Course VI.
+# By Rafael Lorandi <coolparadox@gmail.com>.
+#
+
+use strict;
+use warnings;
+
+use lib 'lib';
+use feature 'say';
+
+use Getopt::Long;
+use My::Science::Bioinfo ':all';
+
+# Online help definitions.
+
+my $version = "0.1";
+
+my $usage_msg =<<__eof__;
+usage: nucleotide_stats -h
+   or: nucleotide_stats [OPTIONS...] [SEQUENCE]
+__eof__
+
+my $help_msg=<<__eof__;
+$usage_msg
+Count appearances of nucleotides in a DNA sequence.
+
+  -h, --help      This help screen.
+  -v, --version   Version number of this routine.
+
+SEQUENCE is a DNA sequence. If absent, it's read from STDIN.
+
+Count results are sent to STDOUT.
+
+Report bugs to Rafael Lorandi <coolparadox\@gmail.com>.
+__eof__
+
+# (Subroutine) Show usage hint and fail.
+sub fail_with_usage {
+
+	print STDERR $usage_msg;
+	exit 1;
+
+}
+
+#
+# Parse CLI options.
+#
+
+my ($help_wanted, $version_wanted);
+my $options_parsed = GetOptions(
+
+	'help' => \$help_wanted,
+	'version' => \$version_wanted,
+
+);
+if (!$options_parsed) {
+
+	# Failed to parse all CLI options.
+	fail_with_usage;
+
+}
+if ($help_wanted) {
+
+	# User wants online help.
+	print $help_msg;
+	exit 0;
+}
+if ($version_wanted) {
+
+	# User wants routine version number.
+	say $version;
+	exit 0;
+}
+my $dna_sequence = shift;
+if (@ARGV) {
+
+	# Too many arguments.
+	say STDERR "error: too many arguments.";
+	fail_with_usage;
+
+}
+
+#
+# Process DNA sequence.
+#
+
+if (!defined $dna_sequence) {
+
+	# User did not pass protein sequence in command line.
+	# Let's get it from STDIN.
+	my @sequences;
+	while (<STDIN>) {
+
+		chomp $_;
+		push @sequences, $_;
+
+	}
+	$dna_sequence = join '', @sequences;
+
+}
+chomp $dna_sequence;
+if (!is_dna $dna_sequence) {
+
+	say STDERR "error: invalid DNA sequence.";
+	exit 1;
+
+}
+my $total = length $dna_sequence;
+my %counts = nucleotide_stats $dna_sequence;
+foreach my $nucleotide (keys %counts) {
+
+	my $count = $counts{$nucleotide};
+	my $percentage = $count * 100 / $total;
+	printf "%s = %u (%0.1f%%)\n", $nucleotide, $count, $percentage;
+
+}
+
