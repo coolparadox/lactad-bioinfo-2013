@@ -1,4 +1,4 @@
-#!/bin/env perl
+#!/usr/bin/env perl
 
 #
 # Count appearances of nucleotides in a DNA sequence.
